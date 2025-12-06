@@ -1,0 +1,190 @@
+<!doctype html>
+<html lang="zh-CN">
+ <head>
+  <meta charset="utf-8">
+  <link rel="canonical" href="https://blog.csdn.net/qq_40684669/article/details/128051645">
+  <meta http-equiv="content-type" content="text/html; charset=utf-8">
+  <meta name="renderer" content="webkit">
+  <meta name="force-rendering" content="webkit">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="report" content="{&quot;pid&quot;: &quot;blog&quot;, &quot;spm&quot;:&quot;1001.2101&quot;}">
+  <meta name="referrer" content="always">
+  <meta http-equiv="Cache-Control" content="no-siteapp">
+  <link rel="alternate" media="handheld" href="#">
+  <meta name="shenma-site-verification" content="5a59773ab8077d4a62bf469ab966a63b_1497598848">
+  <meta name="applicable-device" content="pc">
+  <link href="http://toolman.ddnsfree.com:8585/cn/csdnimg/g/static/logo/favicon32.ico" rel="shortcut icon" type="image/x-icon">
+  <title>linux驱动之调试技巧--- 应用程序远程gdb+vscode调试应用程序, 串口kgdboc调试.ko驱动程序_gdb linux 驱动-CSDN博客</title>
+  <meta name="keywords" content="gdb linux 驱动">
+  <meta name="csdn-baidu-search" content="{&quot;autorun&quot;:true,&quot;install&quot;:true,&quot;keyword&quot;:&quot;gdb linux 驱动&quot;}">
+  <meta name="description" content="文章浏览阅读4.1k次，点赞6次，收藏47次。本文详细介绍了如何在Ubuntu 22.04环境下，通过交叉编译和kgdboc模式，实现IMX6ULL开发板上的应用程序与驱动的图形化调试，包括设置Makefile、编译gdb、配置VSCode以及内核调试。">
+  <link rel="stylesheet" type="text/css" href="http://toolman.ddnsfree.com:8585/cn/csdnimg/release/blogv2/dist/pc/css/detail_enter-c282253ab5.min.css">
+  <link rel="stylesheet" type="text/css" href="http://toolman.ddnsfree.com:8585/cn/csdnimg/release/blogv2/dist/pc/themesSkin/skin-sea/skin-sea-d3a08c2048.min.css">
+  <script src="http://toolman.ddnsfree.com:8585/cn/csdnimg/g/lib/jquery/1.12.4/jquery.min.js" type="text/javascript"></script>
+  <meta name="toolbar" content="{&quot;type&quot;:&quot;0&quot;,&quot;fixModel&quot;:&quot;1&quot;}">
+  <link rel="stylesheet" type="text/css" href="http://toolman.ddnsfree.com:8585/cn/csdnimg/public/sandalstrap/1.4/css/sandalstrap.min.css">
+  <style>
+        .MathJax, .MathJax_Message, .MathJax_Preview{
+            display: none
+        }
+    </style>
+ </head>
+ <body class="nodata  " style="">
+  <link rel="stylesheet" href="http://toolman.ddnsfree.com:8585/cn/csdnimg/release/blogv2/dist/pc/css/blog_code-01256533b5.min.css">
+  <link rel="stylesheet" href="http://toolman.ddnsfree.com:8585/cn/csdnimg/release/blogv2/dist/mdeditor/css/editerView/chart-3456820cac.css">
+  <link rel="stylesheet" href="http://toolman.ddnsfree.com:8585/cn/csdnimg/g/lib/swiper/6.0.4/css/swiper.css"><div class="main_father clearfix d-flex justify-content-center mainfather-concision" style="height:100%;"><div class="container clearfix container-concision" id="mainBox">
+    <main>
+     <div class="blog-content-box"><div class="article-header-box" id="article-header-box"><div class="article-header"><div class="article-title-box">
+         <h1 class="title-article" id="articleContentId">linux驱动之调试技巧--- 应用程序远程gdb+vscode调试应用程序, 串口kgdboc调试.ko驱动程序</h1></div><div class="article-info-box"><div class="article-bar-top"><div class="bar-content active"><span class="article-type-text original">原创</span> <a href="https://mall.csdn.net/vip" data-report-query="spm=3001.10404" data-report-click="{&quot;spm&quot;:&quot;3001.10404&quot;}" data-report-view="{&quot;spm&quot;:&quot;3001.10404&quot;}" class="article-vip-box" target="_blank"><img class="article-vip-img-new" src="http://toolman.ddnsfree.com:8585/cn/csdnimg/release/blogv2/dist/pc/img/identityVipNew.png" alt=""></a> <span class="time">已于&nbsp;2022-11-29 20:40:51&nbsp;修改</span> <span class="border-dian">·</span> <span class="read-count">4.1k 阅读</span>
+           <div class="read-count-box is-like like-ab-new" data-type="top"><span class="border-dian">·</span> <img class="article-read-img article-heard-img active" style="display:none" id="is-like-imgactive-new" src="http://toolman.ddnsfree.com:8585/cn/csdnimg/release/blogv2/dist/pc/img/newHeart2023Active.png" alt=""> <img class="article-read-img article-heard-img" style="display:block" id="is-like-img-new" src="http://toolman.ddnsfree.com:8585/cn/csdnimg/release/blogv2/dist/pc/img/newHeart2023Black.png" alt=""> <span class="read-count" id="blog-digg-num" style="color:;"> 6 </span></div> <span class="border-dian">·</span> <a id="blog_detail_zk_collection" class="un-collection" data-report-click="{&quot;mod&quot;:&quot;popu_823&quot;,&quot;spm&quot;:&quot;1001.2101.3001.4232&quot;,&quot;ab&quot;:&quot;new&quot;}"> <img class="article-collect-img article-heard-img un-collect-status isdefault" style="display:inline-block" src="http://toolman.ddnsfree.com:8585/cn/csdnimg/release/blogv2/dist/pc/img/tobarCollect2.png" alt=""> <img class="article-collect-img article-heard-img collect-status isactive" style="display:none" src="http://toolman.ddnsfree.com:8585/cn/csdnimg/release/blogv2/dist/pc/img/tobarCollectionActive2.png" alt=""> <span class="get-collection"> 47 </span> </a> <span class="border-dian">·</span>
+           <div class="href-article-edit-new"><span class="href-article-edit-click">CC 4.0 BY-SA版权</span>
+            <div class="slide-content-box-new">
+             版权声明：本文为博主原创文章，遵循<a href="http://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noopener"> CC 4.0 BY-SA </a>版权协议，转载请附上原文出处链接和本声明。</div></div></div><div class="operating active"></div></div><div class="blog-tags-box"><div class="tags-box artic-tag-box"><div class="article-tag"><span class="label">文章标签：</span>
+            <p><a rel="nofollow" data-report-query="spm=1001.2101.3001.4223" data-report-click="{&quot;mod&quot;:&quot;popu_626&quot;,&quot;spm&quot;:&quot;1001.2101.3001.4223&quot;,&quot;strategy&quot;:&quot;linux&quot;,&quot;ab&quot;:&quot;new&quot;,&quot;extra&quot;:&quot;{\&quot;searchword\&quot;:\&quot;linux\&quot;}&quot;}" data-report-view="{&quot;mod&quot;:&quot;popu_626&quot;,&quot;spm&quot;:&quot;1001.2101.3001.4223&quot;,&quot;strategy&quot;:&quot;linux&quot;,&quot;ab&quot;:&quot;new&quot;,&quot;extra&quot;:&quot;{\&quot;searchword\&quot;:\&quot;linux\&quot;}&quot;}" class="tag-link-new" href="https://so.csdn.net/so/search/s.do?q=linux&amp;t=all&amp;o=vip&amp;s=&amp;l=&amp;f=&amp;viparticle=&amp;from_tracking_code=tag_word&amp;from_code=app_blog_art" target="_blank">#linux</a> <a rel="nofollow" data-report-query="spm=1001.2101.3001.4223" data-report-click="{&quot;mod&quot;:&quot;popu_626&quot;,&quot;spm&quot;:&quot;1001.2101.3001.4223&quot;,&quot;strategy&quot;:&quot;arm开发&quot;,&quot;ab&quot;:&quot;new&quot;,&quot;extra&quot;:&quot;{\&quot;searchword\&quot;:\&quot;arm开发\&quot;}&quot;}" data-report-view="{&quot;mod&quot;:&quot;popu_626&quot;,&quot;spm&quot;:&quot;1001.2101.3001.4223&quot;,&quot;strategy&quot;:&quot;arm开发&quot;,&quot;ab&quot;:&quot;new&quot;,&quot;extra&quot;:&quot;{\&quot;searchword\&quot;:\&quot;arm开发\&quot;}&quot;}" class="tag-link-new" href="https://so.csdn.net/so/search/s.do?q=arm%E5%BC%80%E5%8F%91&amp;t=all&amp;o=vip&amp;s=&amp;l=&amp;f=&amp;viparticle=&amp;from_tracking_code=tag_word&amp;from_code=app_blog_art" target="_blank">#arm开发</a> <a rel="nofollow" data-report-query="spm=1001.2101.3001.4223" data-report-click="{&quot;mod&quot;:&quot;popu_626&quot;,&quot;spm&quot;:&quot;1001.2101.3001.4223&quot;,&quot;strategy&quot;:&quot;驱动开发&quot;,&quot;ab&quot;:&quot;new&quot;,&quot;extra&quot;:&quot;{\&quot;searchword\&quot;:\&quot;驱动开发\&quot;}&quot;}" data-report-view="{&quot;mod&quot;:&quot;popu_626&quot;,&quot;spm&quot;:&quot;1001.2101.3001.4223&quot;,&quot;strategy&quot;:&quot;驱动开发&quot;,&quot;ab&quot;:&quot;new&quot;,&quot;extra&quot;:&quot;{\&quot;searchword\&quot;:\&quot;驱动开发\&quot;}&quot;}" class="tag-link-new" href="https://so.csdn.net/so/search/s.do?q=%E9%A9%B1%E5%8A%A8%E5%BC%80%E5%8F%91&amp;t=all&amp;o=vip&amp;s=&amp;l=&amp;f=&amp;viparticle=&amp;from_tracking_code=tag_word&amp;from_code=app_blog_art" target="_blank">#驱动开发</a></p></div>
+           <p class="community-name" id="community-name"></p></div></div><div class="up-time">
+          <span>于&nbsp;2022-11-27 00:49:20&nbsp;首次发布</span></div></div></div></div><div id="blogHuaweiyunAdvert" class=""></div><div class="ai-abstract-box"><div class="ai-abstract"><div class="abstract-content"><img class="lock-img" src="http://toolman.ddnsfree.com:8585/cn/csdnimg/i-operation/images/a7311a21245d4888a669ca3155f1f4e5.png" alt="">本文详细介绍了如何在Ubuntu 22.04环境下，通过交叉编译和kgdboc模式，实现IMX6ULL开发板上的应用程序与驱动的图形化调试，包括设置Makefile、编译gdb、配置VSCode以及内核调试。</div></div></div>
+      <article class="baidu_pl"><div id="article_content" class="article_content clearfix">
+        <link rel="stylesheet" href="http://toolman.ddnsfree.com:8585/cn/csdnimg/release/blogv2/dist/mdeditor/css/editerView/kdoc_html_views-1a98987dfd.css">
+        <link rel="stylesheet" href="http://toolman.ddnsfree.com:8585/cn/csdnimg/release/blogv2/dist/mdeditor/css/editerView/ck_htmledit_views-10bf609291.css"><div id="content_views" class="markdown_views prism-atom-one-light">
+         <svg xmlns="http://www.w3.org/2000/svg" style="display: none;"><path stroke-linecap="round" d="M5,0 0,2.5 5,5z" id="raphael-marker-block" style="-webkit-tap-highlight-color: rgba(0, 0, 0, 0);"></path>
+         </svg>
+         <p>环境:<br> Ubuntu: Ubuntu 22.04.1<br> 开发板: imx6ull<br> linux内核版本: Linux4.9.88<br> 虚拟机: vmware15<br> 交叉编译工具gcc版本: 4.9.4 (Linaro GCC 4.9-2017.01)<br> arm-linux-gdb版本: gdb (Linaro_GDB-2017.01) 7.10.1.20160210</p>
+         <p>先决条件<br> 开发板 虚拟机 PC 可互通网络 交叉编译环境已经搭建好<br> 开发板IP: 192.168.31.178<br> 虚拟机IP: 192.168.31.158<br> PC机IP:192.168.31.139</p>
+         <p>使用kgdboc模式(串口连接)调试驱动, 远程gdb调试(网口连接)应用程序</p>
+         <p>本文操作能达到的效果 :<br> 在linux中使用vscode进行图形化调试开发板的应用程序, 同时能对驱动代码进行断点调试:<br> <img src="http://toolman.ddnsfree.com:8585/cn/csdnimg/i-blog/blog_migrate/b40efca660b6275ba6fd149b7dd8ffc3.png#pic_center" alt="在这里插入图片描述"><br> <img src="http://toolman.ddnsfree.com:8585/cn/csdnimg/i-blog/blog_migrate/a6bf63dd0d6aadbf88d04e0c67e2625d.png#pic_center" alt="在这里插入图片描述"><br> <img src="http://toolman.ddnsfree.com:8585/cn/csdnimg/i-blog/blog_migrate/a6d8abaef951fe81459a1fec23be86ea.png#pic_center" alt="在这里插入图片描述"></p>
+         <h3><a id="gdb_23"></a>应用程序远程gdb图形化调试环境搭建</h3>
+         <p>可实现在vscode中直接对应用程序和驱动程序的联调.<br> <strong>搭建环境:</strong><br> Makefile:<br> 需要对应用程序的编译加上编译选项 -g<br> 对驱动程序的编译加上 EXTRA_CFLAGS +=-g</p>
+         <p><strong>搭建应用程序的图形化调试环境:</strong><br> 移植GDB<br> 如果交叉编译工具链有 arm-linux-gdb 和 gdbserver可以直接用 不需要编译源码<br> <img src="http://toolman.ddnsfree.com:8585/cn/csdnimg/i-blog/blog_migrate/3fac030a3973255552aceff497b3272f.png#pic_center" alt="在这里插入图片描述"><br> 获取gdb源码:<br> gdb官网上获取源码，地址为 http://www.gnu.org/software/gdb/download/</p>
+         <ul>
+          <li>编译 gdb</li>
+         </ul>
+         <p>配置项如下：<br> –target：目标机交叉编译器前缀，也就是你所使用的交叉编译器前缀，比如在本教程中就<br> 设置为 arm-linux-gnueabihf。<br> –host：指定编译后的程序在哪里运行，编译 gdb的时候就需用设置，因为我们是需要在 PC<br> 上运行的，编译 gdbserver的时候就要设置为 arm-linux。<br> –prefix：指定安装目录。<br> 创建一个名为“gdb”的文件夹，用来保存编译后的 gdb和 gdbserver，路径自行选择。</p>
+         <pre class="set-code-show"><code class="prism language-c">mkdir build  <span class="token comment">//在 gdb源码下新建 build目录</span>
+cd build   <span class="token comment">//进入到刚刚创建的 build目录下</span>
+<span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token operator">/</span>configure <span class="token operator">--</span>target<span class="token operator">=</span>arm<span class="token operator">-</span>linux<span class="token operator">-</span>gnueabihf <span class="token operator">--</span>prefix<span class="token operator">=</span><span class="token operator">/</span>home<span class="token operator">/</span>yu<span class="token operator">/</span>gdb
+make    <span class="token comment">//编译 </span>
+make install  <span class="token comment">//安装</span>
+</code></pre>
+         <p>不出意外的话在~/gdb目录下会有 需要arm-linux-gnueabihf-gdb 和 gdbserver</p>
+         <ul>
+          <li>运行./arm-linux-gnueabihf-gdb</li>
+         </ul>
+         <p><img src="http://toolman.ddnsfree.com:8585/cn/csdnimg/i-blog/blog_migrate/76e91fd10dc24e7c0e540bdefb287bdb.png#pic_center" alt="在这里插入图片描述"><br> 没问题, 如果运行不了,更换交叉工具链再进行源码编译</p>
+         <ul>
+          <li>将gdbserver放到开发板的/bin 目录中</li>
+         </ul>
+         <p>开发板运行命令 gdbserver --version<br> <img src="http://toolman.ddnsfree.com:8585/cn/csdnimg/i-blog/blog_migrate/2926f42ab37b2becc90304c6f41758ed.png#pic_center" alt="在这里插入图片描述"></p>
+         <ul>
+          <li><p>配置vscode<br> 安装远程调试插件"Remote Development"<br> 点击“调试”-&gt;“添加配置”，然后选择“C++(GDB/LLDB)<br> <img src="http://toolman.ddnsfree.com:8585/cn/csdnimg/i-blog/blog_migrate/00cbc3447587d0749e1d78189863af89.png#pic_center" alt="在这里插入图片描述"><br> 点击之后,当前文件夹会新建一个名为“launch.json” 的文件，此文件会存放在.vscode目录下</p></li><li><p>修改launch.json的内容:</p></li>
+         </ul>
+         <p>{<!-- --><br> …<br> 5 “version”: “0.2.0”,<br> 6 “configurations”: [<br> 7 {<!-- --><br> 8 “name”: “gdbtest”, //填写应用程序的名字<br> 9 “type”: “cppdbg”,<br> 10 “request”: “launch”,<br> 11 “program”: “<span class="katex--inline"><span class="katex"><span class="katex-mathml">workspaceFolder/gdbtest",//应用程序的路径12"args":[],13"stopAtEntry":false,14"cwd":"{workspaceFolder}/gdbtest", //应用程序的路径 12 "args": [], 13 "stopAtEntry": false, 14 "cwd": "</span><span class="katex-html"><span class="base"><span class="strut" style="height: 1em; vertical-align: -0.25em;"></span><span class="mord"><span class="mord mathdefault" style="margin-right: 0.02691em;">w</span><span class="mord mathdefault">o</span><span class="mord mathdefault" style="margin-right: 0.02778em;">r</span><span class="mord mathdefault" style="margin-right: 0.03148em;">k</span><span class="mord mathdefault">s</span><span class="mord mathdefault">p</span><span class="mord mathdefault">a</span><span class="mord mathdefault">c</span><span class="mord mathdefault">e</span><span class="mord mathdefault" style="margin-right: 0.13889em;">F</span><span class="mord mathdefault">o</span><span class="mord mathdefault" style="margin-right: 0.01968em;">l</span><span class="mord mathdefault">d</span><span class="mord mathdefault">e</span><span class="mord mathdefault" style="margin-right: 0.02778em;">r</span></span><span class="mord">/</span><span class="mord mathdefault" style="margin-right: 0.03588em;">g</span><span class="mord mathdefault">d</span><span class="mord mathdefault">b</span><span class="mord mathdefault">t</span><span class="mord mathdefault">e</span><span class="mord mathdefault">s</span><span class="mord mathdefault">t</span><span class="mord">"</span><span class="mpunct">,</span><span class="mspace" style="margin-right: 0.166667em;"></span><span class="mord">/</span><span class="mord">/</span><span class="mord cjk_fallback">应</span><span class="mord cjk_fallback">用</span><span class="mord cjk_fallback">程</span><span class="mord cjk_fallback">序</span><span class="mord cjk_fallback">的</span><span class="mord cjk_fallback">路</span><span class="mord cjk_fallback">径</span><span class="mord">1</span><span class="mord">2</span><span class="mord">"</span><span class="mord mathdefault">a</span><span class="mord mathdefault" style="margin-right: 0.02778em;">r</span><span class="mord mathdefault" style="margin-right: 0.03588em;">g</span><span class="mord mathdefault">s</span><span class="mord">"</span><span class="mspace" style="margin-right: 0.277778em;"></span><span class="mrel">:</span><span class="mspace" style="margin-right: 0.277778em;"></span></span><span class="base"><span class="strut" style="height: 1em; vertical-align: -0.25em;"></span><span class="mopen">[</span><span class="mclose">]</span><span class="mpunct">,</span><span class="mspace" style="margin-right: 0.166667em;"></span><span class="mord">1</span><span class="mord">3</span><span class="mord">"</span><span class="mord mathdefault">s</span><span class="mord mathdefault">t</span><span class="mord mathdefault">o</span><span class="mord mathdefault">p</span><span class="mord mathdefault">A</span><span class="mord mathdefault">t</span><span class="mord mathdefault" style="margin-right: 0.05764em;">E</span><span class="mord mathdefault">n</span><span class="mord mathdefault">t</span><span class="mord mathdefault" style="margin-right: 0.02778em;">r</span><span class="mord mathdefault" style="margin-right: 0.03588em;">y</span><span class="mord">"</span><span class="mspace" style="margin-right: 0.277778em;"></span><span class="mrel">:</span><span class="mspace" style="margin-right: 0.277778em;"></span></span><span class="base"><span class="strut" style="height: 0.88888em; vertical-align: -0.19444em;"></span><span class="mord mathdefault" style="margin-right: 0.10764em;">f</span><span class="mord mathdefault">a</span><span class="mord mathdefault" style="margin-right: 0.01968em;">l</span><span class="mord mathdefault">s</span><span class="mord mathdefault">e</span><span class="mpunct">,</span><span class="mspace" style="margin-right: 0.166667em;"></span><span class="mord">1</span><span class="mord">4</span><span class="mord">"</span><span class="mord mathdefault">c</span><span class="mord mathdefault" style="margin-right: 0.02691em;">w</span><span class="mord mathdefault">d</span><span class="mord">"</span><span class="mspace" style="margin-right: 0.277778em;"></span><span class="mrel">:</span><span class="mspace" style="margin-right: 0.277778em;"></span></span><span class="base"><span class="strut" style="height: 0.69444em; vertical-align: 0em;"></span><span class="mord">"</span></span></span></span></span>{workspaceFolder}”,<br> …<br> 25 “miDebuggerPath”:<br> “/home/yu/ToolChain/bin/arm-linux-gnueabihf-gdb”, //指定刚刚编译出来的arm-linux-gnueabihf-gdb的路径<br> 26 “miDebuggerServerAddress”: “192.168.31.178:2001” //填写servergdb的ip地址,端口自定义<br> 27<br> 28 }<br> 29 ]<br> 30 }</p>
+         <ul>
+          <li>测试<br> 开发板运行测试用例gdbtest(gdbtest自行准备)<br> 运行 gdbserver 192.168.31.158:2001 gdbtest<img src="http://toolman.ddnsfree.com:8585/cn/csdnimg/i-blog/blog_migrate/435d0e1db97eeb736fec317469d2ba54.png#pic_center" alt="在这里插入图片描述">进入等待远程连接状态</li>
+         </ul>
+         <p>vscode进入代码打上断点直接F5进行调试<br> <img src="http://toolman.ddnsfree.com:8585/cn/csdnimg/i-blog/blog_migrate/6c6d4a31cc25c5f3aedba36726010d38.png#pic_center" alt="在这里插入图片描述"><br> 成功运行</p>
+         <p>至此调试应用程序的环境已经搭建完毕~</p>
+         <p><strong>构建出支持调试的内核镜像</strong></p>
+         <ul>
+          <li>make menuconfig 中搜索以下的选项</li>
+         </ul>
+         <p><img src="http://toolman.ddnsfree.com:8585/cn/csdnimg/i-blog/blog_migrate/5934bdd254f0f9706775f4a41608973b.png#pic_center" alt="在这里插入图片描述"><br> 有些可能在自己的开发板上没有, 直接跳过即可, 笔者开发板仅设置了<br> 1, CONFIG_KGDB=y (重要)<br> Kernel hacking —&gt;KGDB：kernel debugger<br> 2, CONFIG_DEBUG_INFO = y<br> Kernel hacking —&gt;Compile-time checks and compiler options—&gt;Compile the kernel with debug info</p>
+         <p>make zImage 编译出内核<br> 更换掉开发板中的内核</p>
+         <ul>
+          <li><p>在uboot中修改启动参数(要根据自身开发板情况进行修改, 不能盲目跟从复制)<br> 查看uboot环境变量(这里都是开发板厂商配置的环境变量, 需要稍作修改)<br> 目的对bootargs环境变量添加kgdboc指令<br> 将所有环境变量复制出来 搜索以下bootargs变量在哪里被用过<br> <img src="http://toolman.ddnsfree.com:8585/cn/csdnimg/i-blog/blog_migrate/3b502cbc332623d580f1fec77b053b3b.png#pic_center" alt="在这里插入图片描述"><br> 由于板卡是mmc启动模式, mmcargs变量会被调用, 在这里加上kgdboc=${console},${baudrate}<br> 表明kgdb使用的串口名和波特率</p></li><li><p>在Ubuntu中搭建直连开发板环境<br> 需要将usb从主机转移到ubuntu中<br> 安装 minicom</p></li>
+         </ul>
+         <pre class="set-code-show"><code class="prism language-c">sudo apt install minicom
+</code></pre>
+         <p>将开发板用串口连接到Ubuntu中(vmware右下角有提示)<br> <img src="http://toolman.ddnsfree.com:8585/cn/csdnimg/i-blog/blog_migrate/eb8afca2641f29d041b6b953afd0bc03.png#pic_center" alt="在这里插入图片描述"><br> 查看 usb设备文件</p>
+         <pre class="set-code-show"><code class="prism language-c">ls <span class="token operator">/</span>dev<span class="token operator">/</span>tty<span class="token operator">*</span>
+</code></pre>
+         <p><img src="http://toolman.ddnsfree.com:8585/cn/csdnimg/i-blog/blog_migrate/49b36bf87e9e5b1acbd62d3be822197e.png#pic_center" alt="在这里插入图片描述"><br> 已有 ttyUSB0设备<br> 修改设备权限</p>
+         <pre class="set-code-show"><code class="prism language-c">sudo chmod <span class="token number">777</span> ttyUSB0
+</code></pre>
+         <p>设置minicom</p>
+         <pre class="set-code-show"><code class="prism language-c">sudo minicom <span class="token operator">-</span>s
+</code></pre>
+         <p><img src="http://toolman.ddnsfree.com:8585/cn/csdnimg/i-blog/blog_migrate/0b84e124628318a983134163f950fcf2.png#pic_center" alt="在这里插入图片描述"><br> <img src="http://toolman.ddnsfree.com:8585/cn/csdnimg/i-blog/blog_migrate/4301ad27e8e71f9e9d7e8458b9b1393d.png#pic_center" alt="在这里插入图片描述"><br> 运行命令 minicom 可进入开发板<br> Ubuntu直连开发板完成</p>
+         <ul>
+          <li>开发板进入内核调试模式<br> 在前面的步骤已经设置好了 kgdboc参数<br> 现在加载需要调试的ko驱动程序</li>
+         </ul>
+         <pre class="set-code-show"><code class="prism language-c">insmod hello_drv<span class="token punctuation">.</span>ko
+</code></pre>
+         <p>查看在开发板中模块信息</p>
+         <pre class="set-code-show"><code class="prism language-c">cat <span class="token operator">/</span>proc<span class="token operator">/</span>modules
+</code></pre>
+         <p><img src="http://toolman.ddnsfree.com:8585/cn/csdnimg/i-blog/blog_migrate/214951b600bdfc95f4b5fcefd3ac1eb0.png#pic_center" alt="在这里插入图片描述"><br> 在Ubuntu终端中使用<br> arm-linux-gnueabihf-objdump -h hello_drv.ko<br> 查看驱动文件头信息<br> 会跳出一大串地址信息, 需要关注<br> .text<br> <img src="http://toolman.ddnsfree.com:8585/cn/csdnimg/i-blog/blog_migrate/96796259f25c19830df5b42fa7c3ddff.png#pic_center" alt="在这里插入图片描述"><br> .bss<br> <img src="http://toolman.ddnsfree.com:8585/cn/csdnimg/i-blog/blog_migrate/120f6c5bf24bb4e48c7bda57875b76f4.png#pic_center" alt="在这里插入图片描述"><br> .data<br> <img src="http://toolman.ddnsfree.com:8585/cn/csdnimg/i-blog/blog_migrate/b92f57d9db8163e3fb78792bbd2c9f7f.png#pic_center" alt="在这里插入图片描述"><br> 一切准备就绪 开发板中启用命令 (如果这一步骤没成功 是 uboot设置的启动参数 bootargs 没设置 kgdboc)</p>
+         <pre class="set-code-show"><code class="prism language-c">echo g <span class="token operator">&gt;</span> <span class="token operator">/</span>proc<span class="token operator">/</span>sysrq<span class="token operator">-</span>trigger
+</code></pre>
+         <p>进入KGDB调试模式 等待GDB连接<br> <img src="http://toolman.ddnsfree.com:8585/cn/csdnimg/i-blog/blog_migrate/bc01e4351b100b6b7371bf223a324a41.png#pic_center" alt="在这里插入图片描述"></p>
+         <ul>
+          <li>Ubuntu终端使用GDB连接KGDB<br> 我们使用vscode中的终端来完成, 更方便查阅代码<br> 打开vscode, 调出终端窗口 进入驱动程序所在目录</li>
+         </ul>
+         <p><img src="http://toolman.ddnsfree.com:8585/cn/csdnimg/i-blog/blog_migrate/d60815d28598bc5207113e8d71a8f455.png#pic_center" alt="在这里插入图片描述"><br> 运行 命令</p>
+         <pre class="set-code-show"><code class="prism language-c">yu@yu$ arm<span class="token operator">-</span>linux<span class="token operator">-</span>gnueabihf<span class="token operator">-</span>gdb
+</code></pre>
+         <p>进入gdb调试模式<br> 设置波特率</p>
+         <pre class="set-code-show"><code class="prism language-c"><span class="token punctuation">(</span>gdb<span class="token punctuation">)</span> set serial baud <span class="token number">115200</span>
+</code></pre>
+         <p>连接至串口与kgdb通信</p>
+         <pre class="set-code-show"><code class="prism language-c"><span class="token punctuation">(</span>gdb<span class="token punctuation">)</span> target remote <span class="token operator">/</span>dev<span class="token operator">/</span>ttyUSB0
+</code></pre>
+         <p><img src="http://toolman.ddnsfree.com:8585/cn/csdnimg/i-blog/blog_migrate/6e169276a3858d8c076d0e633183779e.png#pic_center" alt="在这里插入图片描述"><br> 使用add-symbol-file导入ko文件符号</p>
+         <pre class="set-code-show"><code class="prism language-c"><span class="token punctuation">(</span>gdb<span class="token punctuation">)</span> add<span class="token operator">-</span>symbol<span class="token operator">-</span>file hello_drv<span class="token punctuation">.</span>ko <span class="token number">0x7f000034</span> <span class="token operator">-</span>s <span class="token punctuation">.</span>data <span class="token number">0x7f00074c</span> <span class="token operator">-</span>s <span class="token punctuation">.</span>bss <span class="token number">0x7f000a24</span>
+</code></pre>
+         <p>这些值的计算方式如下:</p>
+         <pre class="set-code-show"><code class="prism language-c">add<span class="token operator">-</span>symbol<span class="token operator">-</span>file <span class="token operator">*</span><span class="token punctuation">.</span>ko text_addr –s <span class="token punctuation">.</span>section0 section_addr0 <span class="token operator">-</span>s <span class="token punctuation">.</span>section1 section_addr1
+Text_addr <span class="token operator">=</span> install_addr <span class="token operator">+</span> file_off
+<span class="token punctuation">.</span>section_addr0 <span class="token operator">=</span> install_addr <span class="token operator">+</span> file_off
+如：<span class="token punctuation">.</span>data 段
+Section_addr <span class="token operator">=</span> install_addr <span class="token operator">+</span> file_off <span class="token operator">=</span> <span class="token number">0x7f000000</span> <span class="token operator">+</span> <span class="token number">0x74c</span> <span class="token operator">=</span> <span class="token number">0x7f00074c</span>
+
+</code></pre>
+         <p><img src="http://toolman.ddnsfree.com:8585/cn/csdnimg/i-blog/blog_migrate/b92e4f7c778627465eb5333b82bab15d.png#pic_center" alt="在这里插入图片描述"><br> 此时输入指令 list 应该是能看到已经进入了 自己写的驱动程序<img src="http://toolman.ddnsfree.com:8585/cn/csdnimg/i-blog/blog_migrate/d90abb86a8651ca804cd540b28f77fcb.png#pic_center" alt="在这里插入图片描述"><br> 输入 b 30 指令 设置断点</p>
+         <p>输入 c指令 开始 运行<img src="http://toolman.ddnsfree.com:8585/cn/csdnimg/i-blog/blog_migrate/20eb2862974d708def3ede05df435773.png#pic_center" alt="在这里插入图片描述"></p>
+         <ul>
+          <li>一切就绪开始 应用程序 与 驱动的联调<br> 在pc机使用网口连接 开发板 可以发现开发板已经能正常操作了</li>
+         </ul>
+         <p>按之前的步骤启动gdbserver</p>
+         <p><img src="http://toolman.ddnsfree.com:8585/cn/csdnimg/i-blog/blog_migrate/05054a5dd374a4e486db55b463ba70c8.png#pic_center" alt="在这里插入图片描述"><br> 不出意外的话 当应用程序运行到第36行read函数时, 驱动程序的断点会被击中<br> <img src="http://toolman.ddnsfree.com:8585/cn/csdnimg/i-blog/blog_migrate/12bd9508135b3f9e7715bca346291591.png#pic_center" alt="在这里插入图片描述"><br> 果然正如我所料 断点击中, 此时就可以用gdb的命令来调试驱动程序了</p>
+         <ul>
+          <li>串口无法使用, 无法查看打印信息<br> 此时已能正常调试, 但是串口被kgdb占用, 同时内核也在同一个串口输出数据, 导致了串口持续乱码<br> 解决这个问题要用到工具叫 agent-proxy<br> 下载地址 : https://git.kernel.org/cgit/utils/kernel/kgdb/agent-proxy.git/</li>
+         </ul>
+         <p>原理就是 将原来的串口 映射成两个, 让kgdb的输出和内核的输出走不同的映射串口.</p>
+         <p>在开发板操作echo g &gt; /proc/sysrq-trigger命令进入等待连接状态之后</p>
+         <p>我们要将minicom的终端关闭.</p>
+         <p>输入命令 agent-proxy 5550^5551 0 /dev/ttyUSB0,115200<br> 这个终端不能关闭<br> 将/dev/ttyUSB0 映射5550 和 5551</p>
+         <p>新开启一个终端, 输入命令telnet localhost 5550 这个终端就进入了开发板</p>
+         <p>Ubuntu在导入文件头信息 add-symbol-file之后 , 输入命令target remote localhost:5551去连接另一个映射</p>
+         <p>只要终端的gdb正常运行之后, 开发板的打印信息也不再乱码了</p>
+         <p><img src="http://toolman.ddnsfree.com:8585/cn/csdnimg/i-blog/blog_migrate/78c9af5b88d3dcf5daa9ff876a89898a.png#pic_center" alt="在这里插入图片描述"></p></div>
+        <link href="http://toolman.ddnsfree.com:8585/cn/csdnimg/release/blogv2/dist/mdeditor/css/editerView/markdown_views-375c595788.css" rel="stylesheet">
+        <link href="http://toolman.ddnsfree.com:8585/cn/csdnimg/release/blogv2/dist/mdeditor/css/style-e504d6a974.css" rel="stylesheet"></div>
+      </article></div>
+    </main></div><div class="recommend-right align-items-stretch clearfix" id="rightAside" data-type="recommend"></div></div>
+  <link rel="stylesheet" href="http://toolman.ddnsfree.com:8585/cn/csdnimg/g/lib/cboxEditor/1.1.6/embed-editor.min.css">
+  <link rel="stylesheet" href="http://toolman.ddnsfree.com:8585/cn/csdnimg/release/blog_editor_html/release1.6.12/ckeditor/plugins/codesnippet/lib/highlight/styles/atom-one-dark.css">
+  <script>
+    $(".MathJax").remove();
+    if ($('div.markdown_views pre.prettyprint code.hljs').length > 0) {
+      $('div.markdown_views')[0].className = 'markdown_views';
+    }
+  </script>
+  <script type="text/javascript" src="http://toolman.ddnsfree.com:8585/cn/csdnimg/release/blog_mathjax/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+  <script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+      "HTML-CSS": {
+        linebreaks: { automatic: true, width: "94%container" },
+        imageFont: null
+      },
+      tex2jax: {
+      preview: "none",
+      ignoreClass:"title-article"
+      },
+      mml2jax: {
+      preview: 'none'
+      }
+    });
+  </script>
+ </body>
+</html>
